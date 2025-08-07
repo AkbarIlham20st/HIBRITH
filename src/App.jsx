@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from './lib/supabaseClient'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -7,18 +8,37 @@ import DashboardLayout from './components/DashboardLayout'
 
 export default function App() {
   const [user, setUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setIsLoading(false)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Routes>
-        {/* Redirect root path to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        
-        {/* Auth pages */}
         <Route path="/login" element={<Login setUser={setUser} />} />
         <Route path="/register" element={<Register setUser={setUser} />} />
-
-        {/* Protected dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -31,8 +51,6 @@ export default function App() {
             )
           }
         />
-
-        {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </div>
