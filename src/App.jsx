@@ -1,26 +1,39 @@
-import { Routes, Route, Link } from 'react-router-dom'
-import Home from './pages/Home'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useState } from 'react'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import DashboardLayout from './components/DashboardLayout'
 
 export default function App() {
+  const [user, setUser] = useState(null)
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Simple navigation for testing */}
-      <nav className="bg-white shadow-sm py-4">
-        <div className="max-w-6xl mx-auto px-4 flex space-x-4">
-          <Link to="/" className="text-blue-600 hover:text-blue-800">Home</Link>
-          <Link to="/login" className="text-blue-600 hover:text-blue-800">Login</Link>
-          <Link to="/register" className="text-blue-600 hover:text-blue-800">Register</Link>
-        </div>
-      </nav>
-
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        {/* Redirect root path to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        
+        {/* Auth pages */}
+        <Route path="/login" element={<Login setUser={setUser} />} />
+        <Route path="/register" element={<Register setUser={setUser} />} />
+
+        {/* Protected dashboard */}
+        <Route
+          path="/dashboard"
+          element={
+            user ? (
+              <DashboardLayout user={user} setUser={setUser}>
+                <Dashboard />
+              </DashboardLayout>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </div>
   )
